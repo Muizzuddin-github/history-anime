@@ -37,5 +37,6 @@ func init() {
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
+	defer db.CloseDB(context.Background())
 	server.Handler.ServeHTTP(w, r)
 }
