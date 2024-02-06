@@ -5,5 +5,11 @@
       "source" : "/src(.*)",
       "destination" : "/api/index.go"
     }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "index.js"
+    }
   ]
 }
