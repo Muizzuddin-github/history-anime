@@ -3,10 +3,10 @@ package middlewares
 import (
 	"context"
 	"encoding/json"
-	"history_anime/api/src/db"
-	"history_anime/api/src/entity"
-	"history_anime/api/src/response"
-	"history_anime/api/src/utility"
+	"history_anime/src/db"
+	"history_anime/src/entity"
+	"history_anime/src/response"
+	"history_anime/src/utility"
 
 	"net/http"
 	"os"

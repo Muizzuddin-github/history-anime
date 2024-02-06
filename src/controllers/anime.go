@@ -3,26 +3,23 @@ package controllers
 import (
 	"context"
 	"encoding/json"
-	"history_anime/api/src/db"
-	"history_anime/api/src/repository"
-	"history_anime/api/src/requestbody"
-	"history_anime/api/src/response"
-	"history_anime/api/src/utility"
-	"history_anime/api/src/validation"
+
+	"history_anime/src/db"
+	"history_anime/src/repository"
+	"history_anime/src/requestbody"
+	"history_anime/src/response"
+	"history_anime/src/validation"
 	"io"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"go.mongodb.org/mongo-driver/mongo"
-	"golang.org/x/crypto/bcrypt"
 )
 
-var Register httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+var AnimeAdd httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 
-	result, err := io.ReadAll(r.Body)
+	bodyByte, err := io.ReadAll(r.Body)
 	if err != nil {
+
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
@@ -33,23 +30,10 @@ var Register httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 		return
 	}
 
-	body := requestbody.Register{}
-	err = json.Unmarshal(result, &body)
+	body := requestbody.Anime{}
+	err = json.Unmarshal(bodyByte, &body)
 	if err != nil {
-		res, _ := json.Marshal(response.Errors{
-			Errors: []string{err.Error()},
-		})
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
-		return
-	}
 
-	res, err := json.Marshal(response.Msg{
-		Message: "Registrasi berhasil",
-	})
-
-	if err != nil {
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
@@ -60,23 +44,40 @@ var Register httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 		return
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
-	if err != nil {
+	errResult := validation.ValidateAnime(&body)
+	if len(*errResult) > 0 {
 		res, _ := json.Marshal(response.Errors{
-			Errors: []string{err.Error()},
+			Errors: *errResult,
 		})
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		w.Write(res)
 		return
 	}
-
-	body.Password = string(hash)
 
 	ctx := context.Background()
-	con := repository.AuthRepo(db.DB)
-	err = con.Register(ctx, &body)
+	anime := repository.AnimeRepo(db.DB)
+
+	insertId, err := anime.Add(ctx, body)
+	if err != nil {
+
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{err.Error()},
+		})
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(res)
+		return
+	}
+
+	data := map[string]string{
+		"message":    "berhasil menambah anime",
+		"insertedID": insertId,
+	}
+
+	res, err := json.Marshal(data)
 	if err != nil {
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
@@ -91,39 +92,42 @@ var Register httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(res)
-
 }
 
-var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-
-	result, err := io.ReadAll(r.Body)
+var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	bodyByte, err := io.ReadAll(r.Body)
 	if err != nil {
+
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(res)
 		return
 	}
 
-	body := requestbody.Login{}
-	err = json.Unmarshal(result, &body)
+	body := requestbody.Anime{}
+	err = json.Unmarshal(bodyByte, &body)
 	if err != nil {
+
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(res)
 		return
 	}
 
-	errResult := validation.ValidateLogin(&body)
+	errResult := validation.ValidateAnime(&body)
 	if len(*errResult) > 0 {
 		res, _ := json.Marshal(response.Errors{
 			Errors: *errResult,
 		})
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(res)
@@ -131,87 +135,111 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 	}
 
 	ctx := context.Background()
-	con := repository.AuthRepo(db.DB)
-	user, err := con.Login(ctx, &body)
+	anime := repository.AnimeRepo(db.DB)
 
+	result, err := anime.Update(ctx, body, params.ByName("id"))
 	if err != nil {
-		if err.Error() == mongo.ErrNoDocuments.Error() {
-			res, _ := json.Marshal(response.Errors{
-				Errors: []string{"check email or password"},
-			})
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(res)
-			return
-		}
+
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(res)
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
-	if err == bcrypt.ErrMismatchedHashAndPassword {
+	if result.MatchedCount == 0 {
 		res, _ := json.Marshal(response.Errors{
-			Errors: []string{"check email or password"},
+			Errors: []string{"anime not found"},
 		})
+
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusNotFound)
 		w.Write(res)
 		return
 	}
 
-	token, err := utility.CreateToken(os.Getenv("SECRET_KEY"), user.Id.Hex())
+	res, err := json.Marshal(response.Msg{Message: "anime update success"})
 	if err != nil {
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(res)
 		return
 	}
-
-	cookie := http.Cookie{
-		Name:     "token",
-		Value:    token,
-		Expires:  time.Now().Add(time.Hour * 24),
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
-	}
-
-	res, _ := json.Marshal(response.Msg{
-		Message: "login success",
-	})
 
 	w.Header().Set("Content-Type", "application/json")
-	http.SetCookie(w, &cookie)
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	w.Write(res)
 }
 
-var Logout httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+var AnimeDel httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 
-	cookie := http.Cookie{
-		Name:     "token",
-		Value:    "",
-		MaxAge:   -1,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
+	ctx := context.Background()
+	anime := repository.AnimeRepo(db.DB)
+	result, err := anime.Del(ctx, params.ByName("id"))
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{err.Error()},
+		})
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(res)
+		return
 	}
 
-	res, _ := json.Marshal(response.Msg{Message: "logout success"})
-	http.SetCookie(w, &cookie)
+	if result.DeletedCount == 0 {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{"anime tidak ada"},
+		})
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(res)
+		return
+	}
+
+	res, _ := json.Marshal(response.Msg{
+		Message: "anime delete success",
+	})
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	w.Write(res)
+	return
 
+}
+
+var AnimeGetAll httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+
+	ctx := context.Background()
+	anime := repository.AnimeRepo(db.DB)
+	result, err := anime.GetAll(ctx)
+
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{err.Error()},
+		})
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(res)
+		return
+	}
+
+	res, _ := json.Marshal(response.AnimeAll{
+		Message: "data anime",
+		Data:    result,
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(res)
 
 }

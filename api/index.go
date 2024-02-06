@@ -2,9 +2,10 @@ package handler
 
 import (
 	"context"
-	"history_anime/api/src/db"
-	_ "history_anime/api/src/db"
-	"history_anime/api/src/routers"
+
+	"history_anime/src/db"
+	_ "history_anime/src/db"
+	"history_anime/src/routers"
 
 	"net/http"
 	"os"
