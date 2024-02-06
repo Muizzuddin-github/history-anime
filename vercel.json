@@ -2,8 +2,8 @@
     "version": 2,
     "routes": [
         {
-            "src": "/(.*)",
-            "dest": "/index.go"
+            "src": "/api/(.*)",
+            "dest": "/api/index.go"
         }
     ]
 }

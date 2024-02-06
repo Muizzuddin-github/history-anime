@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"history_anime/src/db"
-	_ "history_anime/src/db"
 	"history_anime/src/routers"
 
 	"net/http"
