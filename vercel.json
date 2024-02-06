@@ -3,7 +3,7 @@
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "index.go"
+            "dest": "/index.go"
         }
     ]
 }
