@@ -23,7 +23,6 @@ func init() {
 
 	ctx := context.Background()
 	db.CreateConnection(ctx)
-	defer db.CloseDB(ctx)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
