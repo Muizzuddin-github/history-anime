@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"fmt"
 	"history_anime/api/src/db"
 	_ "history_anime/api/src/db"
 	"history_anime/api/src/routers"
@@ -14,8 +13,9 @@ import (
 	"github.com/rs/cors"
 )
 
-func main() {
+var server http.Server
 
+func init() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -30,12 +30,13 @@ func main() {
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
 	})
 
-	server := http.Server{
+	server = http.Server{
 		Handler: c.Handler(routers.Router()),
 		Addr:    "localhost:" + port,
 	}
 
-	fmt.Println("server is running on http://localhost:" + port)
-	server.ListenAndServe()
+}
 
+func Handler(w http.ResponseWriter, r *http.Request) {
+	server.Handler.ServeHTTP(w, r)
 }
