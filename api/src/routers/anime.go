@@ -1,8 +1,8 @@
 package routers
 
 import (
-	"history_anime/src/controllers"
-	"history_anime/src/middlewares"
+	"history_anime/api/src/controllers"
+	"history_anime/api/src/middlewares"
 
 	"github.com/julienschmidt/httprouter"
 )

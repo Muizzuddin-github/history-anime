@@ -2,7 +2,7 @@ package validation
 
 import (
 	"fmt"
-	"history_anime/src/requestbody"
+	"history_anime/api/src/requestbody"
 
 	"github.com/go-playground/validator/v10"
 )

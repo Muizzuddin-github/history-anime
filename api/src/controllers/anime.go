@@ -3,11 +3,11 @@ package controllers
 import (
 	"context"
 	"encoding/json"
-	"history_anime/src/db"
-	"history_anime/src/repository"
-	"history_anime/src/requestbody"
-	"history_anime/src/response"
-	"history_anime/src/validation"
+	"history_anime/api/src/db"
+	"history_anime/api/src/repository"
+	"history_anime/api/src/requestbody"
+	"history_anime/api/src/response"
+	"history_anime/api/src/validation"
 	"io"
 	"net/http"
 

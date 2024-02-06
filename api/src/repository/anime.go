@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 	"errors"
-	"history_anime/src/entity"
-	"history_anime/src/requestbody"
+	"history_anime/api/src/entity"
+	"history_anime/api/src/requestbody"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"

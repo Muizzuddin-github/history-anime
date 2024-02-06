@@ -1,20 +1,18 @@
-package main
+package handler
 
 import (
 	"context"
 	"fmt"
-	"history_anime/src/db"
-	_ "history_anime/src/db"
-	"history_anime/src/routers"
+	"history_anime/api/src/db"
+	_ "history_anime/api/src/db"
+	"history_anime/api/src/routers"
+
 	"net/http"
 	"os"
 
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/rs/cors"
 )
-
-type Orang struct {
-	Nama string
-}
 
 func main() {
 
@@ -27,8 +25,13 @@ func main() {
 	db.CreateConnection(ctx)
 	defer db.CloseDB(ctx)
 
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+	})
+
 	server := http.Server{
-		Handler: routers.Router(),
+		Handler: c.Handler(routers.Router()),
 		Addr:    "localhost:" + port,
 	}
 
