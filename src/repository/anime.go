@@ -14,8 +14,8 @@ import (
 )
 
 type animeRepoInterface interface {
-	Add(ctx context.Context, body requestbody.Anime) (string, error)
-	Update(ctx context.Context, body requestbody.Anime, id string) (*mongo.UpdateResult, error)
+	Add(ctx context.Context, body *requestbody.Anime) (string, error)
+	Update(ctx context.Context, body *requestbody.Anime, id string) (*mongo.UpdateResult, error)
 	Del(ctx context.Context, id string) (*mongo.DeleteResult, error)
 	GetAll(ctx context.Context) ([]entity.Anime, error)
 }
@@ -24,7 +24,7 @@ type animeRepo struct {
 	DB *mongo.Database
 }
 
-func (anime *animeRepo) Add(ctx context.Context, body requestbody.Anime) (string, error) {
+func (anime *animeRepo) Add(ctx context.Context, body *requestbody.Anime) (string, error) {
 
 	insertDoc := bson.D{
 		{Key: "name", Value: body.Name},
@@ -47,7 +47,7 @@ func (anime *animeRepo) Add(ctx context.Context, body requestbody.Anime) (string
 	return insertID.Hex(), nil
 }
 
-func (anime *animeRepo) Update(ctx context.Context, body requestbody.Anime, id string) (*mongo.UpdateResult, error) {
+func (anime *animeRepo) Update(ctx context.Context, body *requestbody.Anime, id string) (*mongo.UpdateResult, error) {
 
 	upDoc := bson.D{
 		{Key: "$set", Value: bson.D{
@@ -95,7 +95,18 @@ func (anime *animeRepo) Del(ctx context.Context, id string) (*mongo.DeleteResult
 
 func (anime *animeRepo) GetAll(ctx context.Context) ([]entity.Anime, error) {
 
-	cur, err := anime.DB.Collection("anime").Find(ctx, bson.D{})
+	sortDoc := bson.D{
+		{
+			Key: "$sort",
+			Value: bson.D{
+				{
+					Key:   "created_at",
+					Value: -1,
+				},
+			},
+		},
+	}
+	cur, err := anime.DB.Collection("anime").Aggregate(ctx, mongo.Pipeline{sortDoc})
 	defer cur.Close(ctx)
 
 	if err != nil {

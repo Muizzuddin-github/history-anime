@@ -7,7 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func ValidateAnime(body *requestbody.Anime) []string {
+func ValidateGenre(body *requestbody.Genre) []string {
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
 

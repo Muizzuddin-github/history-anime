@@ -13,5 +13,5 @@ type Anime struct {
 	Description string             `bson:"description" json:"description"`
 	Image       string             `bson:"image" json:"image"`
 	Status      string             `bson:"status" json:"status"`
-	Created_at  time.Time          `bsoon:"created_at" json:"created_at"`
+	Created_at  time.Time          `bson:"created_at" json:"created_at"`
 }

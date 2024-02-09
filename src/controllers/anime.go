@@ -24,9 +24,7 @@ var AnimeAdd httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 			Errors: []string{err.Error()},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
 
@@ -38,60 +36,48 @@ var AnimeAdd httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 			Errors: []string{err.Error()},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
 
 	errResult := validation.ValidateAnime(&body)
-	if len(*errResult) > 0 {
+	if len(errResult) > 0 {
 		res, _ := json.Marshal(response.Errors{
-			Errors: *errResult,
+			Errors: errResult,
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
 	ctx := context.Background()
 	anime := repository.AnimeRepo(db.DB)
-
-	insertId, err := anime.Add(ctx, body)
+	insertID, err := anime.Add(ctx, &body)
 	if err != nil {
 
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
-	data := map[string]string{
-		"message":    "berhasil menambah anime",
-		"insertedID": insertId,
-	}
+	res, err := json.Marshal(response.AnimeInsert{
+		Message:    "insert anime success",
+		InsertedID: insertID,
+	})
 
-	res, err := json.Marshal(data)
 	if err != nil {
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(res)
+	response.SendJSONResponse(w, http.StatusOK, res)
 }
 
 var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -102,9 +88,7 @@ var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 			Errors: []string{err.Error()},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
 
@@ -116,37 +100,30 @@ var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 			Errors: []string{err.Error()},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
 
 	errResult := validation.ValidateAnime(&body)
-	if len(*errResult) > 0 {
+	if len(errResult) > 0 {
 		res, _ := json.Marshal(response.Errors{
-			Errors: *errResult,
+			Errors: errResult,
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
 	ctx := context.Background()
 	anime := repository.AnimeRepo(db.DB)
 
-	result, err := anime.Update(ctx, body, params.ByName("id"))
+	result, err := anime.Update(ctx, &body, params.ByName("id"))
 	if err != nil {
 
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
@@ -155,9 +132,7 @@ var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 			Errors: []string{"anime not found"},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusNotFound, res)
 		return
 	}
 
@@ -167,15 +142,11 @@ var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 			Errors: []string{err.Error()},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(res)
+	response.SendJSONResponse(w, http.StatusCreated, res)
 }
 
 var AnimeDel httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -188,20 +159,16 @@ var AnimeDel httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 			Errors: []string{err.Error()},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
 	if result.DeletedCount == 0 {
 		res, _ := json.Marshal(response.Errors{
-			Errors: []string{"anime tidak ada"},
+			Errors: []string{"anime not found"},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusNotFound, res)
 		return
 	}
 
@@ -209,11 +176,7 @@ var AnimeDel httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 		Message: "anime delete success",
 	})
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(res)
-	return
-
+	response.SendJSONResponse(w, http.StatusOK, res)
 }
 
 var AnimeGetAll httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -227,9 +190,7 @@ var AnimeGetAll httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 			Errors: []string{err.Error()},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
@@ -238,8 +199,5 @@ var AnimeGetAll httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 		Data:    result,
 	})
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(res)
-
+	response.SendJSONResponse(w, http.StatusOK, res)
 }

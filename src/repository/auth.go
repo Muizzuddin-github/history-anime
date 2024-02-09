@@ -13,6 +13,7 @@ import (
 type authRepoInterface interface {
 	Register(ctx context.Context, body *requestbody.Register) error
 	Login(ctx context.Context, body *requestbody.Login) (*entity.Users, error)
+	ResetPassword(ctx context.Context, email string, newHashPassword string) (*mongo.UpdateResult, error)
 }
 
 type authRepo struct {
@@ -40,6 +41,35 @@ func (auth *authRepo) Login(ctx context.Context, body *requestbody.Login) (*enti
 	}
 
 	return &result, nil
+}
+
+func (auth *authRepo) ResetPassword(ctx context.Context, email string, newHashPassword string) (*mongo.UpdateResult, error) {
+
+	filter := bson.D{
+		{
+			Key:   "email",
+			Value: email,
+		},
+	}
+
+	updateDoc := bson.D{
+		{
+			Key: "$set",
+			Value: bson.D{
+				{
+					Key:   "password",
+					Value: newHashPassword,
+				},
+			},
+		},
+	}
+
+	up, err := auth.DB.Collection("users").UpdateOne(ctx, filter, updateDoc)
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+
+	return up, nil
 }
 
 func AuthRepo(db *mongo.Database) authRepoInterface {

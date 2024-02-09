@@ -1,5 +1,7 @@
 package handler
 
+// package main
+
 import (
 	"context"
 
@@ -23,9 +25,10 @@ func init() {
 
 	ctx := context.Background()
 	db.CreateConnection(ctx)
+	// defer db.CloseDB(ctx)
 
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"},
+		AllowedOrigins: []string{"http://localhost:5173"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
 	})
 
@@ -33,6 +36,8 @@ func init() {
 		Handler: c.Handler(routers.Router()),
 		Addr:    "localhost:" + port,
 	}
+
+	server.ListenAndServe()
 
 }
 

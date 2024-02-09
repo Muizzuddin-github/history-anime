@@ -2,12 +2,12 @@ package response
 
 import "history_anime/src/entity"
 
-type AnimeAll struct {
+type GenreAll struct {
 	Message string         `json:"message"`
-	Data    []entity.Anime `json:"data"`
+	Data    []entity.Genre `json:"data"`
 }
 
-type AnimeInsert struct {
+type GenreInsert struct {
 	Message    string `json:"message"`
 	InsertedID string `json:"insertedID"`
 }

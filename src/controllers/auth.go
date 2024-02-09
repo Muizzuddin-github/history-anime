@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"history_anime/src/db"
 	"history_anime/src/repository"
@@ -28,9 +29,7 @@ var Register httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 			Errors: []string{err.Error()},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
 
@@ -40,9 +39,7 @@ var Register httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
 
@@ -55,9 +52,7 @@ var Register httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 			Errors: []string{err.Error()},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
@@ -67,9 +62,7 @@ var Register httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 			Errors: []string{err.Error()},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
@@ -83,16 +76,11 @@ var Register httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 			Errors: []string{err.Error()},
 		})
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(res)
-
+	response.SendJSONResponse(w, http.StatusCreated, res)
 }
 
 var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -102,9 +90,7 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
 
@@ -114,20 +100,16 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
 
 	errResult := validation.ValidateLogin(&body)
-	if len(*errResult) > 0 {
+	if len(errResult) > 0 {
 		res, _ := json.Marshal(response.Errors{
-			Errors: *errResult,
+			Errors: errResult,
 		})
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
 
@@ -140,17 +122,13 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 			res, _ := json.Marshal(response.Errors{
 				Errors: []string{"check email or password"},
 			})
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(res)
+			response.SendJSONResponse(w, http.StatusBadRequest, res)
 			return
 		}
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
@@ -159,9 +137,7 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{"check email or password"},
 		})
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
@@ -170,9 +146,7 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(res)
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
@@ -190,10 +164,8 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 		Message: "login success",
 	})
 
-	w.Header().Set("Content-Type", "application/json")
 	http.SetCookie(w, &cookie)
-	w.WriteHeader(http.StatusOK)
-	w.Write(res)
+	response.SendJSONResponse(w, http.StatusOK, res)
 }
 
 var Logout httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -210,9 +182,175 @@ var Logout httprouter.Handle = func(w http.ResponseWriter, r *http.Request, para
 
 	res, _ := json.Marshal(response.Msg{Message: "logout success"})
 	http.SetCookie(w, &cookie)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	response.SendJSONResponse(w, http.StatusOK, res)
+}
 
-	w.Write(res)
+var ForgotPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 
+	bodyByte, err := io.ReadAll(r.Body)
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{err.Error()},
+		})
+
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
+		return
+	}
+
+	body := requestbody.ForgotPassword{}
+	err = json.Unmarshal(bodyByte, &body)
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{err.Error()},
+		})
+
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
+		return
+	}
+
+	errResult := validation.ValidateForgotPassword(&body)
+	if len(errResult) > 0 {
+		res, _ := json.Marshal(response.Errors{
+			Errors: errResult,
+		})
+
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
+		return
+	}
+
+	token, err := utility.CreateTokenForgotPassword(os.Getenv("SECRET_KEY"), body.Email)
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: errResult,
+		})
+
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
+		return
+	}
+
+	url := fmt.Sprintf("%s/reset-password/%s", os.Getenv("CLIENT_URL_HOST"), token)
+	err = utility.SendEmail(utility.Email{
+		From:    "History Anime",
+		To:      body.Email,
+		Subject: "reset password",
+		Html: fmt.Sprintf(`
+			<p style="font-weight: bold;">silahkan reset password anda <a href="%s" target="_blank"> reset password </a> </p>
+		  <p style="font-weight: bold;"> link berlaku 10 menit </p>
+		`, url),
+	})
+
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{err.Error()},
+		})
+
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
+		return
+	}
+
+	res, err := json.Marshal(response.Msg{
+		Message: "email has been sent and check your email",
+	})
+
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{err.Error()},
+		})
+
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
+		return
+	}
+
+	response.SendJSONResponse(w, http.StatusInternalServerError, res)
+}
+
+var ResetPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+
+	bodyByte, err := io.ReadAll(r.Body)
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{err.Error()},
+		})
+
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
+		return
+	}
+
+	body := requestbody.ResetPassword{}
+	err = json.Unmarshal(bodyByte, &body)
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{err.Error()},
+		})
+
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
+		return
+	}
+
+	errResult := validation.ValidateResetPassword(&body)
+	if len(errResult) > 0 {
+		res, _ := json.Marshal(response.Errors{
+			Errors: errResult,
+		})
+
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
+		return
+	}
+
+	email, err := utility.VerifyTokenForgotPassword(os.Getenv("SECRET_KEY"), body.Token)
+
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{err.Error()},
+		})
+
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
+		return
+	}
+
+	newHashPassword, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), 10)
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{err.Error()},
+		})
+
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
+		return
+	}
+
+	ctx := context.Background()
+	auth := repository.AuthRepo(db.DB)
+	result, err := auth.ResetPassword(ctx, email, string(newHashPassword))
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{err.Error()},
+		})
+
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
+		return
+	}
+
+	if result.MatchedCount == 0 {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{"token invalid"},
+		})
+
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
+		return
+	}
+
+	res, err := json.Marshal(response.Msg{
+		Message: "reset password success",
+	})
+
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{err.Error()},
+		})
+
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
+		return
+	}
+
+	response.SendJSONResponse(w, http.StatusOK, res)
 }

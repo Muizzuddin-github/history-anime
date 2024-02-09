@@ -27,9 +27,7 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 				Errors: []string{"Unauthorized"},
 			})
 
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write(res)
+			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
 		}
 
@@ -39,9 +37,7 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 				Errors: []string{"Unauthorized"},
 			})
 
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write(res)
+			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
 		}
 
@@ -51,9 +47,7 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 				Errors: []string{"Unauthorized"},
 			})
 
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write(res)
+			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
 		}
 
@@ -66,9 +60,7 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 				Errors: []string{"Unauthorized"},
 			})
 
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write(res)
+			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
 		}
 

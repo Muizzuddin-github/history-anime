@@ -15,6 +15,7 @@ func Router() *httprouter.Router {
 	})
 	AuthRoute(routers)
 	AnimeRoute(routers)
+	GenreRoute(routers)
 
 	return routers
 }
