@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"history_anime/src/db"
+	"history_anime/src/entity"
 	"history_anime/src/repository"
 	"history_anime/src/requestbody"
 	"history_anime/src/response"
@@ -17,6 +18,8 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -342,6 +345,68 @@ var ResetPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reques
 
 	res, err := json.Marshal(response.Msg{
 		Message: "reset password success",
+	})
+
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{err.Error()},
+		})
+
+		response.SendJSONResponse(w, http.StatusInternalServerError, res)
+		return
+	}
+
+	response.SendJSONResponse(w, http.StatusOK, res)
+}
+
+var IsLogin httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+
+	token, err := r.Cookie("token")
+	if err == http.ErrNoCookie {
+
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{"Unauthorized"},
+		})
+
+		response.SendJSONResponse(w, http.StatusUnauthorized, res)
+		return
+	}
+
+	id, err := utility.VerifyToken(os.Getenv("SECRET_KEY"), token.Value)
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{"Unauthorized"},
+		})
+
+		response.SendJSONResponse(w, http.StatusUnauthorized, res)
+		return
+	}
+
+	objId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{"Unauthorized"},
+		})
+
+		response.SendJSONResponse(w, http.StatusUnauthorized, res)
+		return
+	}
+
+	ctx := context.Background()
+	filter := bson.D{{Key: "_id", Value: objId}}
+	result := entity.Users{}
+	err = db.DB.Collection("users").FindOne(ctx, filter).Decode(&result)
+	if err == mongo.ErrNoDocuments {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{"Unauthorized"},
+		})
+
+		response.SendJSONResponse(w, http.StatusUnauthorized, res)
+		return
+	}
+
+	res, err := json.Marshal(response.Msg{
+		Message: "user has been login",
 	})
 
 	if err != nil {

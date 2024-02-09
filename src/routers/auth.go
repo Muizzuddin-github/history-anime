@@ -13,4 +13,5 @@ func AuthRoute(auth *httprouter.Router) {
 	auth.POST("/api/logout", controllers.Logout)
 	auth.POST("/api/forgot-password", controllers.ForgotPassword)
 	auth.POST("/api/reset-password", controllers.ResetPassword)
+	auth.GET("/api/islogin", controllers.IsLogin)
 }
