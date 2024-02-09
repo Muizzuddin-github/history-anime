@@ -365,7 +365,7 @@ var IsLogin httprouter.Handle = func(w http.ResponseWriter, r *http.Request, par
 	if err == http.ErrNoCookie {
 
 		res, _ := json.Marshal(response.Errors{
-			Errors: []string{"Unauthorized"},
+			Errors: []string{"user is not logged in"},
 		})
 
 		response.SendJSONResponse(w, http.StatusUnauthorized, res)
@@ -375,7 +375,7 @@ var IsLogin httprouter.Handle = func(w http.ResponseWriter, r *http.Request, par
 	id, err := utility.VerifyToken(os.Getenv("SECRET_KEY"), token.Value)
 	if err != nil {
 		res, _ := json.Marshal(response.Errors{
-			Errors: []string{"Unauthorized"},
+			Errors: []string{"user is not logged in"},
 		})
 
 		response.SendJSONResponse(w, http.StatusUnauthorized, res)
@@ -385,7 +385,7 @@ var IsLogin httprouter.Handle = func(w http.ResponseWriter, r *http.Request, par
 	objId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		res, _ := json.Marshal(response.Errors{
-			Errors: []string{"Unauthorized"},
+			Errors: []string{"user is not logged in"},
 		})
 
 		response.SendJSONResponse(w, http.StatusUnauthorized, res)
@@ -398,7 +398,7 @@ var IsLogin httprouter.Handle = func(w http.ResponseWriter, r *http.Request, par
 	err = db.DB.Collection("users").FindOne(ctx, filter).Decode(&result)
 	if err == mongo.ErrNoDocuments {
 		res, _ := json.Marshal(response.Errors{
-			Errors: []string{"Unauthorized"},
+			Errors: []string{"user is not logged in"},
 		})
 
 		response.SendJSONResponse(w, http.StatusUnauthorized, res)
