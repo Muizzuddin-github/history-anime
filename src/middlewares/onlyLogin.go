@@ -62,6 +62,13 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 
 			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
+		} else if err != nil {
+			res, _ := json.Marshal(response.Errors{
+				Errors: []string{err.Error()},
+			})
+
+			response.SendJSONResponse(w, http.StatusInternalServerError, res)
+			return
 		}
 
 		next(w, r, params)
