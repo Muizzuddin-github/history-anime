@@ -37,7 +37,7 @@ func init() {
 		Addr:    "localhost:" + port,
 	}
 
-	server.ListenAndServe()
+	// server.ListenAndServe()
 
 }
 
