@@ -160,8 +160,9 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 		SameSite: http.SameSiteNoneMode,
 	}
 
-	res, _ := json.Marshal(response.Msg{
+	res, _ := json.Marshal(response.Login{
 		Message: "login success",
+		Token:   token,
 	})
 
 	http.SetCookie(w, &cookie)
