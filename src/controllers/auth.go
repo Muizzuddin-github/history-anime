@@ -140,7 +140,7 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{"check email or password"},
 		})
-		response.SendJSONResponse(w, http.StatusInternalServerError, res)
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
 
