@@ -28,8 +28,8 @@ func init() {
 	// defer db.CloseDB(ctx)
 
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:5173"},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedOrigins:   []string{"http://localhost:5173"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 		AllowCredentials: true,
 	})
 

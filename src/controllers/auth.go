@@ -265,7 +265,7 @@ var ForgotPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	response.SendJSONResponse(w, http.StatusInternalServerError, res)
+	response.SendJSONResponse(w, http.StatusOK, res)
 }
 
 var ResetPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
