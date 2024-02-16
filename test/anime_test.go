@@ -53,13 +53,14 @@ func TestAnimeAdd(t *testing.T) {
 		resBodyByte, err := io.ReadAll(body)
 		require.Nil(t, err)
 
-		resBody := response.Msg{}
+		resBody := response.AnimeInsert{}
 
 		err = json.Unmarshal(resBodyByte, &resBody)
 		require.Nil(t, err)
 
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 		assert.Equal(t, "insert anime success", resBody.Message)
+		assert.NotEmpty(t, resBody.InsertedID)
 
 		err = dbutility.AnimeDeleteOne(dataInsert.Name)
 		require.Nil(t, err)
@@ -110,6 +111,50 @@ func TestAnimeAdd(t *testing.T) {
 
 		err = dbutility.AnimeDeleteOne(data.Name)
 		require.NotNil(t, err)
+	})
+
+	t.Run("content type error", func(t *testing.T) {
+		dataInsert := requestbody.Anime{
+			Name:        "testing",
+			Description: "lorem",
+			Genre:       []string{"testing"},
+			Image:       "https://example.com",
+			Status:      "watching",
+		}
+
+		bodyByte, err := json.Marshal(dataInsert)
+		require.Nil(t, err)
+
+		req, err := http.NewRequest(http.MethodPost, Server.URL+"/api/anime", bytes.NewReader(bodyByte))
+		require.Nil(t, err)
+
+		req.AddCookie(&http.Cookie{
+			Name:     "token",
+			Value:    TokenUser,
+			Expires:  time.Now().Add(time.Hour * 24),
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteNoneMode,
+		})
+
+		client := &http.Client{}
+		res, err := client.Do(req)
+		require.Nil(t, err)
+
+		body := res.Body
+		defer body.Close()
+
+		resBodyByte, err := io.ReadAll(body)
+		require.Nil(t, err)
+
+		resBody := response.Errors{}
+
+		err = json.Unmarshal(resBodyByte, &resBody)
+		require.Nil(t, err)
+
+		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		assert.Equal(t, "content-type must be application/json", resBody.Errors[0])
 	})
 }
 
@@ -213,6 +258,50 @@ func TestAnimeUpdate(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 		assert.Equal(t, 5, len(resBodyJson.Errors))
+	})
+
+	t.Run("content type error", func(t *testing.T) {
+
+		data := requestbody.Anime{
+			Name:        "testingubah",
+			Genre:       []string{"testingubah"},
+			Description: "testingubah",
+			Image:       "https://history.com",
+			Status:      "finish",
+		}
+
+		bodyByte, err := json.Marshal(data)
+		require.Nil(t, err)
+
+		request, err := http.NewRequest(http.MethodPut, Server.URL+"/api/anime/"+id, bytes.NewReader(bodyByte))
+		require.Nil(t, err)
+
+		request.AddCookie(&http.Cookie{
+			Name:     "token",
+			Value:    TokenUser,
+			Expires:  time.Now().Add(time.Hour * 24),
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteNoneMode,
+		})
+
+		client := &http.Client{}
+		res, err := client.Do(request)
+		require.Nil(t, err)
+
+		resBody := res.Body
+		defer resBody.Close()
+
+		resBodyRead, err := io.ReadAll(resBody)
+		require.Nil(t, err)
+
+		resBodyJson := response.Errors{}
+		err = json.Unmarshal(resBodyRead, &resBodyJson)
+		require.Nil(t, err)
+
+		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		assert.Equal(t, "content-type must be application/json", resBodyJson.Errors[0])
 	})
 
 	err = dbutility.AnimeDeleteOneById(id)

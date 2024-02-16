@@ -43,6 +43,15 @@ var GenreGetAll httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 
 var GenreAdd httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 
+	if r.Header.Get("Content-Type") != "application/json" {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{"content-type must be application/json"},
+		})
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
+		return
+
+	}
+
 	bodyByte, err := io.ReadAll(r.Body)
 	if err != nil {
 		res, _ := json.Marshal(response.Errors{
