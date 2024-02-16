@@ -195,7 +195,7 @@ var AnimeGetAll httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 	}
 
 	res, _ := json.Marshal(response.AnimeAll{
-		Message: "data anime",
+		Message: "all data anime",
 		Data:    result,
 	})
 

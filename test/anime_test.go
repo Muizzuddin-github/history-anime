@@ -297,3 +297,51 @@ func TestAnimeDelete(t *testing.T) {
 	})
 
 }
+
+func TestAnimeGetAllSuccess(t *testing.T) {
+
+	dataInsert := requestbody.Anime{
+		Name:        "testing1",
+		Description: "lorem",
+		Genre:       []string{"testing1"},
+		Image:       "https://example.com",
+		Status:      "watching",
+	}
+
+	id, err := dbutility.AnimeAdd(dataInsert.Name, dataInsert.Image, dataInsert.Genre, dataInsert.Description, dataInsert.Status)
+	require.Nil(t, err)
+
+	request, err := http.NewRequest(http.MethodGet, Server.URL+"/api/anime", nil)
+	require.Nil(t, err)
+
+	request.AddCookie(&http.Cookie{
+		Name:     "token",
+		Value:    TokenUser,
+		Expires:  time.Now().Add(time.Hour * 24),
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+	})
+
+	client := &http.Client{}
+	res, err := client.Do(request)
+	require.Nil(t, err)
+
+	body := res.Body
+	defer body.Close()
+
+	bodyByte, err := io.ReadAll(body)
+	require.Nil(t, err)
+
+	bodyJson := response.AnimeAll{}
+	err = json.Unmarshal(bodyByte, &bodyJson)
+	require.Nil(t, err)
+
+	assert.Equal(t, http.StatusOK, res.StatusCode)
+	assert.Equal(t, "all data anime", bodyJson.Message)
+
+	err = dbutility.AnimeDeleteOneById(id)
+	require.Nil(t, err)
+
+}
