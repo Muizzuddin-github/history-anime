@@ -2,70 +2,45 @@ package test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
-	"history_anime/src/db"
 	"history_anime/src/requestbody"
 	"history_anime/src/response"
-	"history_anime/src/routers"
 	"history_anime/src/utility"
 	"history_anime/test/dbutility"
 	"io"
-	"log"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-var server *httptest.Server
+func TestLogin(t *testing.T) {
 
-var bodyRegister = requestbody.Register{
-	Username: "hasan",
-	Email:    "hasan@gmail.com",
-	Password: "123",
-}
-
-func TestMain(m *testing.M) {
-	err := godotenv.Load("../.env")
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	var loginTesting = requestbody.Register{
+		Username: "testing",
+		Email:    "testing@gmail.com",
+		Password: "123",
 	}
-	ctx := context.Background()
-	db.CreateConnection(ctx)
-	server = httptest.NewServer(routers.Router())
-	m.Run()
-	defer db.CloseDB(ctx)
-	defer server.Close()
-	err = dbutility.DeleteUser(bodyRegister.Email)
+
+	loginTestingByte, _ := json.Marshal(loginTesting)
+
+	resp, err := http.Post(Server.URL+"/api/register", "application/json", bytes.NewReader(loginTestingByte))
 	if err != nil {
 		panic(err)
 	}
-}
-
-func TestLogin(t *testing.T) {
-
-	bodyRegisterByte, _ := json.Marshal(bodyRegister)
-
-	resp, err := http.Post(server.URL+"/api/register", "application/json", bytes.NewReader(bodyRegisterByte))
-	require.Nil(t, err)
 	defer resp.Body.Close()
-
-	require.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	t.Run("success", func(t *testing.T) {
 
 		body, _ := json.Marshal(requestbody.Login{
-			Email:    bodyRegister.Email,
-			Password: bodyRegister.Password,
+			Email:    loginTesting.Email,
+			Password: loginTesting.Password,
 		})
 
-		res, err := http.Post(server.URL+"/api/login", "application/json", bytes.NewReader(body))
+		res, err := http.Post(Server.URL+"/api/login", "application/json", bytes.NewReader(body))
 		require.Nil(t, err)
 
 		bodyResult := res.Body
@@ -88,11 +63,11 @@ func TestLogin(t *testing.T) {
 
 	t.Run("client error password", func(t *testing.T) {
 		body, _ := json.Marshal(requestbody.Login{
-			Email:    "haskuy12@gmail.com",
-			Password: bodyRegister.Password,
+			Email:    loginTesting.Email,
+			Password: "1234",
 		})
 
-		res, err := http.Post(server.URL+"/api/login", "application/json", bytes.NewReader(body))
+		res, err := http.Post(Server.URL+"/api/login", "application/json", bytes.NewReader(body))
 		require.Nil(t, err)
 		bodyResult := res.Body
 
@@ -110,13 +85,13 @@ func TestLogin(t *testing.T) {
 		assert.Equal(t, len(cookie), 0)
 	})
 
-	t.Run("client error email", func(t *testing.T) {
+	t.Run("client error not found email", func(t *testing.T) {
 		body, _ := json.Marshal(requestbody.Login{
 			Email:    "haskuy@gmail.com",
-			Password: "haskuy",
+			Password: loginTesting.Password,
 		})
 
-		res, err := http.Post(server.URL+"/api/login", "application/json", bytes.NewReader(body))
+		res, err := http.Post(Server.URL+"/api/login", "application/json", bytes.NewReader(body))
 		require.Nil(t, err)
 		bodyResult := res.Body
 
@@ -140,7 +115,7 @@ func TestLogin(t *testing.T) {
 			Password: "haskuy",
 		})
 
-		res, err := http.Post(server.URL+"/api/login", "application/json", bytes.NewReader(body))
+		res, err := http.Post(Server.URL+"/api/login", "application/json", bytes.NewReader(body))
 		require.Nil(t, err)
 
 		bodyResult := res.Body
@@ -159,12 +134,15 @@ func TestLogin(t *testing.T) {
 		assert.Equal(t, len(cookie), 0)
 	})
 
+	err = dbutility.DeleteUser(loginTesting.Email)
+	require.Nil(t, err)
+
 }
 
 func TestLogout(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 
-		req, err := http.NewRequest(http.MethodPost, server.URL+"/api/logout", nil)
+		req, err := http.NewRequest(http.MethodPost, Server.URL+"/api/logout", nil)
 		require.Nil(t, err)
 
 		req.AddCookie(&http.Cookie{
@@ -202,12 +180,11 @@ func TestForgotPassword(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 
 		bodyByte, err := json.Marshal(requestbody.ForgotPassword{
-			Email: "muizzuddin334@gmail.com",
+			Email: os.Getenv("MY_EMAIL"),
 		})
-
 		require.Nil(t, err)
 
-		res, err := http.Post(server.URL+"/api/forgot-password", "application/json", bytes.NewReader(bodyByte))
+		res, err := http.Post(Server.URL+"/api/forgot-password", "application/json", bytes.NewReader(bodyByte))
 		require.Nil(t, err)
 
 		result := res.Body
@@ -227,13 +204,14 @@ func TestForgotPassword(t *testing.T) {
 	})
 
 	t.Run("error validatoin", func(t *testing.T) {
+
 		bodyByte, err := json.Marshal(requestbody.ForgotPassword{
 			Email: "hasan",
 		})
 
 		require.Nil(t, err)
 
-		res, err := http.Post(server.URL+"/api/forgot-password", "application/json", bytes.NewReader(bodyByte))
+		res, err := http.Post(Server.URL+"/api/forgot-password", "application/json", bytes.NewReader(bodyByte))
 		require.Nil(t, err)
 
 		result := res.Body
@@ -256,7 +234,22 @@ func TestForgotPassword(t *testing.T) {
 func TestResetPassword(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
-		token, err := utility.CreateTokenForgotPassword(os.Getenv("SECRET_KEY"), bodyRegister.Email)
+
+		var resetTesting = requestbody.Register{
+			Username: "testingreset",
+			Email:    "testing@gmail.com",
+			Password: "123",
+		}
+
+		loginTestingByte, _ := json.Marshal(resetTesting)
+
+		resp, err := http.Post(Server.URL+"/api/register", "application/json", bytes.NewReader(loginTestingByte))
+		if err != nil {
+			panic(err)
+		}
+		defer resp.Body.Close()
+
+		token, err := utility.CreateTokenForgotPassword(os.Getenv("SECRET_KEY"), resetTesting.Email)
 		require.Nil(t, err)
 
 		bodyResetPassword := requestbody.ResetPassword{
@@ -267,7 +260,7 @@ func TestResetPassword(t *testing.T) {
 		bodyResetPasswordByte, err := json.Marshal(bodyResetPassword)
 		require.Nil(t, err)
 
-		res, err := http.Post(server.URL+"/api/reset-password", "application/json", bytes.NewReader(bodyResetPasswordByte))
+		res, err := http.Post(Server.URL+"/api/reset-password", "application/json", bytes.NewReader(bodyResetPasswordByte))
 
 		require.Nil(t, err)
 
@@ -285,11 +278,11 @@ func TestResetPassword(t *testing.T) {
 		assert.Equal(t, "reset password success", body.Message)
 
 		bodyLogin, _ := json.Marshal(requestbody.Login{
-			Email:    "haskuy12@gmail.com",
-			Password: bodyRegister.Password,
+			Email:    resetTesting.Email,
+			Password: resetTesting.Password,
 		})
 
-		resLogin, err := http.Post(server.URL+"/api/login", "application/json", bytes.NewReader(bodyLogin))
+		resLogin, err := http.Post(Server.URL+"/api/login", "application/json", bytes.NewReader(bodyLogin))
 		require.Nil(t, err)
 		bodyResult := resLogin.Body
 		defer bodyResult.Close()
@@ -305,11 +298,28 @@ func TestResetPassword(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, resLogin.StatusCode)
 		assert.Equal(t, "check email or password", resBodyLogin.Errors[0])
 		assert.Equal(t, len(cookie), 0)
+
+		err = dbutility.DeleteUser(resetTesting.Email)
+		require.Nil(t, err)
 	})
 
 	t.Run("error token invalid", func(t *testing.T) {
 
-		id, err := dbutility.FindUser(bodyRegister.Email)
+		var resetTesting = requestbody.Register{
+			Username: "testingtokeninvalid",
+			Email:    "testing@gmail.com",
+			Password: "123",
+		}
+
+		loginTestingByte, _ := json.Marshal(resetTesting)
+
+		resp, err := http.Post(Server.URL+"/api/register", "application/json", bytes.NewReader(loginTestingByte))
+		if err != nil {
+			panic(err)
+		}
+		defer resp.Body.Close()
+
+		id, err := dbutility.FindUser(resetTesting.Email)
 		require.Nil(t, err)
 
 		token, err := utility.CreateTokenForgotPassword(os.Getenv("SECRET_KEY"), id)
@@ -323,7 +333,7 @@ func TestResetPassword(t *testing.T) {
 		bodyResetPasswordByte, err := json.Marshal(bodyResetPassword)
 		require.Nil(t, err)
 
-		res, err := http.Post(server.URL+"/api/reset-password", "application/json", bytes.NewReader(bodyResetPasswordByte))
+		res, err := http.Post(Server.URL+"/api/reset-password", "application/json", bytes.NewReader(bodyResetPasswordByte))
 
 		require.Nil(t, err)
 
@@ -339,10 +349,13 @@ func TestResetPassword(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 		assert.Equal(t, "token invalid", body.Errors[0])
+
+		err = dbutility.DeleteUser(resetTesting.Email)
+		require.Nil(t, err)
 	})
 
 	t.Run("jwt error type", func(t *testing.T) {
-		token, err := utility.CreateToken(os.Getenv("SECRET_KEY"), bodyRegister.Email)
+		token, err := utility.CreateToken(os.Getenv("SECRET_KEY"), "email@gmail.com")
 		require.Nil(t, err)
 
 		bodyResetPassword := requestbody.ResetPassword{
@@ -353,7 +366,7 @@ func TestResetPassword(t *testing.T) {
 		bodyResetPasswordByte, err := json.Marshal(bodyResetPassword)
 		require.Nil(t, err)
 
-		res, err := http.Post(server.URL+"/api/reset-password", "application/json", bytes.NewReader(bodyResetPasswordByte))
+		res, err := http.Post(Server.URL+"/api/reset-password", "application/json", bytes.NewReader(bodyResetPasswordByte))
 
 		require.Nil(t, err)
 
@@ -375,14 +388,27 @@ func TestResetPassword(t *testing.T) {
 
 func TestIsLogin(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
+		var isLoginTesting = requestbody.Register{
+			Username: "testingtokeninvalid",
+			Email:    "testing@gmail.com",
+			Password: "123",
+		}
 
-		id, err := dbutility.FindUser(bodyRegister.Email)
+		loginTestingByte, _ := json.Marshal(isLoginTesting)
+
+		resp, err := http.Post(Server.URL+"/api/register", "application/json", bytes.NewReader(loginTestingByte))
+		if err != nil {
+			panic(err)
+		}
+		defer resp.Body.Close()
+
+		id, err := dbutility.FindUser(isLoginTesting.Email)
 		require.Nil(t, err)
 
 		token, err := utility.CreateToken(os.Getenv("SECRET_KEY"), id)
 		require.Nil(t, err)
 
-		request, err := http.NewRequest(http.MethodGet, server.URL+"/api/islogin", nil)
+		request, err := http.NewRequest(http.MethodGet, Server.URL+"/api/islogin", nil)
 		require.Nil(t, err)
 
 		request.AddCookie(&http.Cookie{
@@ -411,11 +437,14 @@ func TestIsLogin(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 		assert.Equal(t, "user has been login", body.Message)
+
+		err = dbutility.DeleteUser(isLoginTesting.Email)
+		require.Nil(t, err)
 	})
 
 	t.Run("user is not login", func(t *testing.T) {
 
-		res, err := http.Get(server.URL + "/api/islogin")
+		res, err := http.Get(Server.URL + "/api/islogin")
 		require.Nil(t, err)
 
 		resBody := res.Body
@@ -433,10 +462,11 @@ func TestIsLogin(t *testing.T) {
 	})
 
 	t.Run("jwt error type", func(t *testing.T) {
-		token, err := utility.CreateToken(os.Getenv("SECRET_KEY"), bodyRegister.Email)
+
+		token, err := utility.CreateToken(os.Getenv("SECRET_KEY"), "email@gmail.com")
 		require.Nil(t, err)
 
-		request, err := http.NewRequest(http.MethodGet, server.URL+"/api/islogin", nil)
+		request, err := http.NewRequest(http.MethodGet, Server.URL+"/api/islogin", nil)
 		require.Nil(t, err)
 
 		request.AddCookie(&http.Cookie{

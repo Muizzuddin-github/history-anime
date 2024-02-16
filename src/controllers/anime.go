@@ -46,7 +46,7 @@ var AnimeAdd httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 			Errors: errResult,
 		})
 
-		response.SendJSONResponse(w, http.StatusInternalServerError, res)
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
 
@@ -110,7 +110,7 @@ var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 			Errors: errResult,
 		})
 
-		response.SendJSONResponse(w, http.StatusInternalServerError, res)
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
 
@@ -136,7 +136,7 @@ var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	res, err := json.Marshal(response.Msg{Message: "anime update success"})
+	res, err := json.Marshal(response.Msg{Message: "update anime success"})
 	if err != nil {
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
@@ -146,7 +146,7 @@ var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	response.SendJSONResponse(w, http.StatusCreated, res)
+	response.SendJSONResponse(w, http.StatusOK, res)
 }
 
 var AnimeDel httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -173,7 +173,7 @@ var AnimeDel httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 	}
 
 	res, _ := json.Marshal(response.Msg{
-		Message: "anime delete success",
+		Message: "delete anime success",
 	})
 
 	response.SendJSONResponse(w, http.StatusOK, res)
