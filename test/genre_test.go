@@ -176,3 +176,36 @@ func TestGenreDelete(t *testing.T) {
 		assert.Equal(t, "genre not found", resBodyJson.Errors[0])
 	})
 }
+
+func TestGenreGetAllSuccess(t *testing.T) {
+
+	request, err := http.NewRequest(http.MethodGet, Server.URL+"/api/genre", nil)
+	require.Nil(t, err)
+
+	request.AddCookie(&http.Cookie{
+		Name:     "token",
+		Value:    TokenUser,
+		Expires:  time.Now().Add(time.Hour * 24),
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+	})
+
+	client := &http.Client{}
+	res, err := client.Do(request)
+	require.Nil(t, err)
+
+	resBody := res.Body
+	defer resBody.Close()
+
+	resBodyByte, err := io.ReadAll(resBody)
+	require.Nil(t, err)
+
+	resBodyJson := response.GenreAll{}
+	err = json.Unmarshal(resBodyByte, &resBodyJson)
+	require.Nil(t, err)
+
+	assert.Equal(t, http.StatusOK, res.StatusCode)
+	assert.Equal(t, "all data genre", resBodyJson.Message)
+}

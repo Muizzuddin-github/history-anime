@@ -30,7 +30,7 @@ var GenreGetAll httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 	}
 
 	res, err := json.Marshal(response.GenreAll{
-		Message: "data genre",
+		Message: "all data genre",
 		Data:    result,
 	})
 	if err != nil {
