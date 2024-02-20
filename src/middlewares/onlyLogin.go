@@ -86,7 +86,7 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 			})
 			logger.New().WithFields(logrus.Fields{
 				"action": "database error",
-				"status": http.StatusText(http.StatusUnauthorized),
+				"status": http.StatusText(http.StatusInternalServerError),
 			}).Error(err.Error())
 			response.SendJSONResponse(w, http.StatusInternalServerError, res)
 			return

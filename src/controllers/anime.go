@@ -3,8 +3,10 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"history_anime/src/db"
+	"history_anime/src/logger"
 	"history_anime/src/repository"
 	"history_anime/src/requestbody"
 	"history_anime/src/response"
@@ -13,6 +15,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/sirupsen/logrus"
 )
 
 var AnimeAdd httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -21,6 +24,13 @@ var AnimeAdd httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{"content-type must be application/json"},
 		})
+
+		logger.New().WithFields(logrus.Fields{
+			"action": "Content Type",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn("Content Type Not Allowed")
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 
@@ -33,6 +43,12 @@ var AnimeAdd httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error io.ReadAll",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -45,6 +61,12 @@ var AnimeAdd httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error json.Unmarshal",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -55,6 +77,12 @@ var AnimeAdd httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 			Errors: errResult,
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Validation error",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(strings.Join(errResult, " "))
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -63,11 +91,16 @@ var AnimeAdd httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 	anime := repository.AnimeRepo(db.DB)
 	insertID, err := anime.Add(ctx, &body)
 	if err != nil {
-
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Database Error",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
@@ -82,10 +115,22 @@ var AnimeAdd httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error json.Marshal",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
+	logger.New().WithFields(logrus.Fields{
+		"action": "Success",
+		"status": http.StatusText(http.StatusOK),
+		"path":   r.URL.Path,
+		"method": r.Method,
+	}).Info("Request Success")
 	response.SendJSONResponse(w, http.StatusOK, res)
 }
 
@@ -95,18 +140,29 @@ var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{"content-type must be application/json"},
 		})
+
+		logger.New().WithFields(logrus.Fields{
+			"action": "Content Type",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn("Content Type Not Allowed")
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
-
 	}
 
 	bodyByte, err := io.ReadAll(r.Body)
 	if err != nil {
-
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error io.ReadAll",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -114,11 +170,16 @@ var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 	body := requestbody.Anime{}
 	err = json.Unmarshal(bodyByte, &body)
 	if err != nil {
-
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error json.Unmarshal",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -129,6 +190,12 @@ var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 			Errors: errResult,
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Validation error",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(strings.Join(errResult, " "))
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -138,10 +205,16 @@ var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 
 	result, err := anime.Update(ctx, &body, params.ByName("id"))
 	if err != nil {
-
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
+
+		logger.New().WithFields(logrus.Fields{
+			"action": "Database Error",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
@@ -151,6 +224,12 @@ var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 			Errors: []string{"anime not found"},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Anime Not Found",
+			"status": http.StatusText(http.StatusNotFound),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusNotFound, res)
 		return
 	}
@@ -161,10 +240,22 @@ var AnimeUpdate httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error json.Marshal",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
+	logger.New().WithFields(logrus.Fields{
+		"action": "Success",
+		"status": http.StatusText(http.StatusOK),
+		"path":   r.URL.Path,
+		"method": r.Method,
+	}).Info("Request Success")
 	response.SendJSONResponse(w, http.StatusOK, res)
 }
 
@@ -178,6 +269,12 @@ var AnimeDel httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Database Error",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
@@ -187,6 +284,12 @@ var AnimeDel httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 			Errors: []string{"anime not found"},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Anime Not Found",
+			"status": http.StatusText(http.StatusNotFound),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusNotFound, res)
 		return
 	}
@@ -195,6 +298,12 @@ var AnimeDel httprouter.Handle = func(w http.ResponseWriter, r *http.Request, pa
 		Message: "delete anime success",
 	})
 
+	logger.New().WithFields(logrus.Fields{
+		"action": "Success",
+		"status": http.StatusText(http.StatusOK),
+		"path":   r.URL.Path,
+		"method": r.Method,
+	}).Info(err.Error())
 	response.SendJSONResponse(w, http.StatusOK, res)
 }
 
@@ -209,6 +318,12 @@ var AnimeGetAll httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Database Error",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
@@ -218,5 +333,11 @@ var AnimeGetAll httprouter.Handle = func(w http.ResponseWriter, r *http.Request,
 		Data:    result,
 	})
 
+	logger.New().WithFields(logrus.Fields{
+		"action": "Success",
+		"status": http.StatusText(http.StatusOK),
+		"path":   r.URL.Path,
+		"method": r.Method,
+	}).Info(err.Error())
 	response.SendJSONResponse(w, http.StatusOK, res)
 }
