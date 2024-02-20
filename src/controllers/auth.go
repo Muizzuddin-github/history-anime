@@ -656,6 +656,6 @@ var IsLogin httprouter.Handle = func(w http.ResponseWriter, r *http.Request, par
 		"status": http.StatusText(http.StatusOK),
 		"path":   r.URL.Path,
 		"method": r.Method,
-	}).Info(err.Error())
+	}).Info("Request Success")
 	response.SendJSONResponse(w, http.StatusOK, res)
 }
