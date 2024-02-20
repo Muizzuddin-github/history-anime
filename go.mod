@@ -18,6 +18,7 @@ require (
 	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rs/cors v1.10.1 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
 	golang.org/x/net v0.10.0 // indirect

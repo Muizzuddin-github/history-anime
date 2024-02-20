@@ -38,12 +38,6 @@ func init() {
 		Addr:    "localhost:" + port,
 	}
 
-	file, err := os.OpenFile("../logfile.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
 	// server.ListenAndServe()
 
 }

@@ -9,9 +9,9 @@ import (
 
 func AnimeRoute(anime *httprouter.Router) {
 
-	anime.GET("/api/anime", middlewares.OnlyLogin(controllers.AnimeGetAll))
-	anime.POST("/api/anime", middlewares.OnlyLogin(controllers.AnimeAdd))
-	anime.PUT("/api/anime/:id", middlewares.OnlyLogin(controllers.AnimeUpdate))
-	anime.DELETE("/api/anime/:id", middlewares.OnlyLogin(controllers.AnimeDel))
+	anime.GET("/api/anime", middlewares.Logging(middlewares.OnlyLogin(controllers.AnimeGetAll)))
+	anime.POST("/api/anime", middlewares.Logging(middlewares.OnlyLogin(controllers.AnimeAdd)))
+	anime.PUT("/api/anime/:id", middlewares.Logging(middlewares.OnlyLogin(controllers.AnimeUpdate)))
+	anime.DELETE("/api/anime/:id", middlewares.Logging(middlewares.OnlyLogin(controllers.AnimeDel)))
 
 }
