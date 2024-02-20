@@ -13,6 +13,7 @@ import (
 	"os"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -28,7 +29,10 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 				Errors: []string{"Unauthorized"},
 			})
 
-			logger.New().WithField("action", "no token").Warn(http.StatusText(http.StatusUnauthorized))
+			logger.New().WithFields(logrus.Fields{
+				"action": "No Token",
+				"status": http.StatusText(http.StatusUnauthorized),
+			}).Warn(err.Error())
 			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
 		}
@@ -39,7 +43,10 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 				Errors: []string{"Unauthorized"},
 			})
 
-			logger.New().WithField("action", "token invalid").Warn(http.StatusText(http.StatusUnauthorized))
+			logger.New().WithFields(logrus.Fields{
+				"action": "Token Invalid",
+				"status": http.StatusText(http.StatusUnauthorized),
+			}).Warn(err.Error())
 			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
 		}
@@ -50,7 +57,10 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 				Errors: []string{"Unauthorized"},
 			})
 
-			logger.New().WithField("action", "object id invalid").Warn(http.StatusText(http.StatusUnauthorized))
+			logger.New().WithFields(logrus.Fields{
+				"action": "ObjectID Mongodb Invalid",
+				"status": http.StatusText(http.StatusUnauthorized),
+			}).Warn(err.Error())
 			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
 		}
@@ -64,14 +74,20 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 				Errors: []string{"Unauthorized"},
 			})
 
-			logger.New().WithField("action", "user not found").Warn(http.StatusText(http.StatusUnauthorized))
+			logger.New().WithFields(logrus.Fields{
+				"action": "User Not Found",
+				"status": http.StatusText(http.StatusUnauthorized),
+			}).Warn(err.Error())
 			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
 		} else if err != nil {
 			res, _ := json.Marshal(response.Errors{
 				Errors: []string{err.Error()},
 			})
-			logger.New().WithField("action", err.Error()).Error(http.StatusText(http.StatusInternalServerError))
+			logger.New().WithFields(logrus.Fields{
+				"action": "database error",
+				"status": http.StatusText(http.StatusUnauthorized),
+			}).Error(err.Error())
 			response.SendJSONResponse(w, http.StatusInternalServerError, res)
 			return
 		}
