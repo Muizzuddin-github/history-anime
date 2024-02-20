@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"history_anime/src/db"
 	"history_anime/src/entity"
+	"history_anime/src/logger"
 	"history_anime/src/response"
 	"history_anime/src/utility"
 
@@ -27,6 +28,7 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 				Errors: []string{"Unauthorized"},
 			})
 
+			logger.New().WithField("action", "no token").Warn(http.StatusText(http.StatusUnauthorized))
 			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
 		}
@@ -37,6 +39,7 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 				Errors: []string{"Unauthorized"},
 			})
 
+			logger.New().WithField("action", "token invalid").Warn(http.StatusText(http.StatusUnauthorized))
 			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
 		}
@@ -47,6 +50,7 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 				Errors: []string{"Unauthorized"},
 			})
 
+			logger.New().WithField("action", "object id invalid").Warn(http.StatusText(http.StatusUnauthorized))
 			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
 		}
@@ -60,13 +64,14 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 				Errors: []string{"Unauthorized"},
 			})
 
+			logger.New().WithField("action", "user not found").Warn(http.StatusText(http.StatusUnauthorized))
 			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
 		} else if err != nil {
 			res, _ := json.Marshal(response.Errors{
 				Errors: []string{err.Error()},
 			})
-
+			logger.New().WithField("action", err.Error()).Error(http.StatusText(http.StatusInternalServerError))
 			response.SendJSONResponse(w, http.StatusInternalServerError, res)
 			return
 		}
