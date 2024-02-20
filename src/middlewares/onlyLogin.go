@@ -32,6 +32,8 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 			logger.New().WithFields(logrus.Fields{
 				"action": "No Token",
 				"status": http.StatusText(http.StatusUnauthorized),
+				"path":   r.URL.Path,
+				"method": r.Method,
 			}).Warn(err.Error())
 			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
@@ -46,6 +48,8 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 			logger.New().WithFields(logrus.Fields{
 				"action": "Token Invalid",
 				"status": http.StatusText(http.StatusUnauthorized),
+				"path":   r.URL.Path,
+				"method": r.Method,
 			}).Warn(err.Error())
 			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
@@ -60,6 +64,8 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 			logger.New().WithFields(logrus.Fields{
 				"action": "ObjectID Mongodb Invalid",
 				"status": http.StatusText(http.StatusUnauthorized),
+				"path":   r.URL.Path,
+				"method": r.Method,
 			}).Warn(err.Error())
 			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
@@ -77,6 +83,8 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 			logger.New().WithFields(logrus.Fields{
 				"action": "User Not Found",
 				"status": http.StatusText(http.StatusUnauthorized),
+				"path":   r.URL.Path,
+				"method": r.Method,
 			}).Warn(err.Error())
 			response.SendJSONResponse(w, http.StatusUnauthorized, res)
 			return
@@ -84,9 +92,12 @@ func OnlyLogin(next httprouter.Handle) httprouter.Handle {
 			res, _ := json.Marshal(response.Errors{
 				Errors: []string{err.Error()},
 			})
+
 			logger.New().WithFields(logrus.Fields{
-				"action": "database error",
+				"action": "Database Error",
 				"status": http.StatusText(http.StatusInternalServerError),
+				"path":   r.URL.Path,
+				"method": r.Method,
 			}).Error(err.Error())
 			response.SendJSONResponse(w, http.StatusInternalServerError, res)
 			return

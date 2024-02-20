@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"history_anime/src/db"
 	"history_anime/src/entity"
+	"history_anime/src/logger"
 	"history_anime/src/repository"
 	"history_anime/src/requestbody"
 	"history_anime/src/response"
@@ -18,6 +20,7 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -93,6 +96,13 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
+
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error io.ReadAll",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -103,6 +113,13 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
+
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error json.Unmarshal",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -112,6 +129,13 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 		res, _ := json.Marshal(response.Errors{
 			Errors: errResult,
 		})
+
+		logger.New().WithFields(logrus.Fields{
+			"action": "Validation Error",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -125,12 +149,26 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 			res, _ := json.Marshal(response.Errors{
 				Errors: []string{"check email or password"},
 			})
+
+			logger.New().WithFields(logrus.Fields{
+				"action": "Error No Document",
+				"status": http.StatusText(http.StatusBadRequest),
+				"path":   r.URL.Path,
+				"method": r.Method,
+			}).Warn(err.Error())
 			response.SendJSONResponse(w, http.StatusBadRequest, res)
 			return
 		}
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
+
+		logger.New().WithFields(logrus.Fields{
+			"action": "Database Error",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
@@ -140,6 +178,13 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{"check email or password"},
 		})
+
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error Bcrypt Mismatch",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -149,6 +194,13 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
+
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error Create Token",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
@@ -168,6 +220,12 @@ var Login httprouter.Handle = func(w http.ResponseWriter, r *http.Request, param
 		Token:   token,
 	})
 
+	logger.New().WithFields(logrus.Fields{
+		"action": "Success",
+		"status": http.StatusText(http.StatusOK),
+		"path":   r.URL.Path,
+		"method": r.Method,
+	}).Info("Request Success")
 	http.SetCookie(w, &cookie)
 	response.SendJSONResponse(w, http.StatusOK, res)
 }
@@ -185,11 +243,33 @@ var Logout httprouter.Handle = func(w http.ResponseWriter, r *http.Request, para
 	}
 
 	res, _ := json.Marshal(response.Msg{Message: "logout success"})
+
+	logger.New().WithFields(logrus.Fields{
+		"action": "Success",
+		"status": http.StatusText(http.StatusOK),
+		"path":   r.URL.Path,
+		"method": r.Method,
+	}).Info("Request Success")
 	http.SetCookie(w, &cookie)
 	response.SendJSONResponse(w, http.StatusOK, res)
 }
 
 var ForgotPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+
+	if r.Header.Get("Content-Type") != "application/json" {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{"content-type must be application/json"},
+		})
+
+		logger.New().WithFields(logrus.Fields{
+			"action": "Content Type",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn("Content Type Not Allowed")
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
+		return
+	}
 
 	bodyByte, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -197,6 +277,12 @@ var ForgotPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reque
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error io.ReadAll",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -208,6 +294,12 @@ var ForgotPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reque
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error json.Unmarshal",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -218,6 +310,12 @@ var ForgotPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reque
 			Errors: errResult,
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Validation error",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(strings.Join(errResult, " "))
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -228,6 +326,12 @@ var ForgotPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reque
 			Errors: errResult,
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error Create Token",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
@@ -248,6 +352,12 @@ var ForgotPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reque
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Erorr Send Email",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
@@ -261,14 +371,41 @@ var ForgotPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reque
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error json.Marshal",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
+	logger.New().WithFields(logrus.Fields{
+		"action": "Success",
+		"status": http.StatusText(http.StatusOK),
+		"path":   r.URL.Path,
+		"method": r.Method,
+	}).Info("Request Success")
 	response.SendJSONResponse(w, http.StatusOK, res)
 }
 
 var ResetPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+
+	if r.Header.Get("Content-Type") != "application/json" {
+		res, _ := json.Marshal(response.Errors{
+			Errors: []string{"content-type must be application/json"},
+		})
+
+		logger.New().WithFields(logrus.Fields{
+			"action": "Content Type",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn("Content Type Not Allowed")
+		response.SendJSONResponse(w, http.StatusBadRequest, res)
+		return
+	}
 
 	bodyByte, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -276,6 +413,12 @@ var ResetPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reques
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error io.ReadAll",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -287,6 +430,12 @@ var ResetPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reques
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error json.Unmarshal",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -297,6 +446,12 @@ var ResetPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reques
 			Errors: errResult,
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Validation error",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(strings.Join(errResult, " "))
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -308,6 +463,12 @@ var ResetPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reques
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error Token Invalid",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -318,6 +479,12 @@ var ResetPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reques
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error Generate Password",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
@@ -330,6 +497,12 @@ var ResetPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reques
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Database Error",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
@@ -339,6 +512,12 @@ var ResetPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reques
 			Errors: []string{"token invalid"},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "User Not Found",
+			"status": http.StatusText(http.StatusBadRequest),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusBadRequest, res)
 		return
 	}
@@ -346,16 +525,27 @@ var ResetPassword httprouter.Handle = func(w http.ResponseWriter, r *http.Reques
 	res, err := json.Marshal(response.Msg{
 		Message: "reset password success",
 	})
-
 	if err != nil {
 		res, _ := json.Marshal(response.Errors{
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error json.Marshal",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
+	logger.New().WithFields(logrus.Fields{
+		"action": "Success",
+		"status": http.StatusText(http.StatusOK),
+		"path":   r.URL.Path,
+		"method": r.Method,
+	}).Info(err.Error())
 	response.SendJSONResponse(w, http.StatusOK, res)
 }
 
@@ -368,6 +558,12 @@ var IsLogin httprouter.Handle = func(w http.ResponseWriter, r *http.Request, par
 			Errors: []string{"user is not logged in"},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "No Token",
+			"status": http.StatusText(http.StatusUnauthorized),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusUnauthorized, res)
 		return
 	}
@@ -378,6 +574,12 @@ var IsLogin httprouter.Handle = func(w http.ResponseWriter, r *http.Request, par
 			Errors: []string{"user is not logged in"},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Token Invalid",
+			"status": http.StatusText(http.StatusUnauthorized),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusUnauthorized, res)
 		return
 	}
@@ -388,6 +590,12 @@ var IsLogin httprouter.Handle = func(w http.ResponseWriter, r *http.Request, par
 			Errors: []string{"user is not logged in"},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "ObjectID Mongodb Invalid",
+			"status": http.StatusText(http.StatusUnauthorized),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusUnauthorized, res)
 		return
 	}
@@ -401,6 +609,12 @@ var IsLogin httprouter.Handle = func(w http.ResponseWriter, r *http.Request, par
 			Errors: []string{"user is not logged in"},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "User Not Found",
+			"status": http.StatusText(http.StatusUnauthorized),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Warn(err.Error())
 		response.SendJSONResponse(w, http.StatusUnauthorized, res)
 		return
 	} else if err != nil {
@@ -408,6 +622,12 @@ var IsLogin httprouter.Handle = func(w http.ResponseWriter, r *http.Request, par
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Database Error",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
@@ -421,9 +641,21 @@ var IsLogin httprouter.Handle = func(w http.ResponseWriter, r *http.Request, par
 			Errors: []string{err.Error()},
 		})
 
+		logger.New().WithFields(logrus.Fields{
+			"action": "Error json.Marshal",
+			"status": http.StatusText(http.StatusInternalServerError),
+			"path":   r.URL.Path,
+			"method": r.Method,
+		}).Error(err.Error())
 		response.SendJSONResponse(w, http.StatusInternalServerError, res)
 		return
 	}
 
+	logger.New().WithFields(logrus.Fields{
+		"action": "Success",
+		"status": http.StatusText(http.StatusOK),
+		"path":   r.URL.Path,
+		"method": r.Method,
+	}).Info(err.Error())
 	response.SendJSONResponse(w, http.StatusOK, res)
 }
